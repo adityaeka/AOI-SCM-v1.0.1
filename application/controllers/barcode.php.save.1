@@ -1,0 +1,112 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class Barcode extends CI_Controller {
+	
+	function __construct()
+    {
+		parent::__construct();
+		date_default_timezone_set('Asia/Jakarta');
+		$CI = &get_instance();
+  		$this->db2 = $CI->load->database('db2',TRUE);
+    }
+    function index(){
+        echo $this->convert(1234.22121);
+    }
+    function convert( $num = '' )
+      {
+          $num    = ( string ) ( ( int ) $num );
+         
+          if( ( int ) ( $num ) && ctype_digit( $num ) )
+          {
+              $words  = array( );
+             
+              $num    = str_replace( array( ',' , ' ' ) , '' , trim( $num ) );
+             
+              $list1  = array('','one','two','three','four','five','six','seven',
+                  'eight','nine','ten','eleven','twelve','thirteen','fourteen',
+                  'fifteen','sixteen','seventeen','eighteen','nineteen');
+             
+              $list2  = array('','ten','twenty','thirty','forty','fifty','sixty',
+                  'seventy','eighty','ninety','hundred');
+             
+              $list3  = array('','thousand','million','billion','trillion',
+                  'quadrillion','quintillion','sextillion','septillion',
+                  'octillion','nonillion','decillion','undecillion',
+                  'duodecillion','tredecillion','quattuordecillion',
+                  'quindecillion','sexdecillion','septendecillion',
+                  'octodecillion','novemdecillion','vigintillion');
+             
+              $num_length = strlen( $num );
+              $levels = ( int ) ( ( $num_length + 2 ) / 3 );
+              $max_length = $levels * 3;
+              $num    = substr( '00'.$num , -$max_length );
+           $num_levels = str_split( $num , 3 );
+             
+              foreach( $num_levels as $num_part )
+              {
+                  $levels--;
+                  $hundreds   = ( int ) ( $num_part / 100 );
+                  $hundreds   = ( $hundreds ? ' ' . $list1[$hundreds] . ' Hundred' . ( $hundreds == 1 ? '' : 's' ) . ' ' : '' );
+                  $tens       = ( int ) ( $num_part % 100 );
+                  $singles    = '';
+                 
+                  if( $tens < 20 )
+                  {
+                      $tens   = ( $tens ? ' ' . $list1[$tens] . ' ' : '' );
+                  }
+                  else
+                  {
+                      $tens   = ( int ) ( $tens / 10 );
+                      $tens   = ' ' . $list2[$tens] . ' ';
+                      $singles    = ( int ) ( $num_part % 10 );
+                      $singles    = ' ' . $list1[$singles] . ' ';
+                  }
+                  $words[]    = $hundreds . $tens . $singles . ( ( $levels && ( int ) ( $num_part ) ) ? ' ' . $list3[$levels] . ' ' : '' );
+              }
+             
+              $commas = count( $words );
+             
+              if( $commas > 1 )
+              {
+                  $commas = $commas - 1;
+              }
+             
+              $words  = implode( ', ' , $words );
+             
+              //Some Finishing Touch
+              //Replacing multiples of spaces with one space
+              $words  = trim( str_replace( ' ,' , ',' , trim_all( ucwords( $words ) ) ) , ', ' );
+              if( $commas )
+              {
+                  $words  = str_replace_last( ',' , ' and' , $words );
+              }
+             
+              return $words;
+          }
+          else if( ! ( ( int ) $num ) )
+          {
+              return 'Zero';
+          }
+          return '';
+      }
+function  mail(){
+
+$config['protocol']	= 'mail';
+	$config['smtp_host']	= 'mail2.aoi.co.id';
+	$config['smtp_port']	= 25;
+	$config['smtp_user']	= 'khamim@nurhuda.com';
+	$config['smtp_pass']	= '12345';
+	$config['priority']	= 1;
+	$config['mailtype']	= 'html';
+	$config['charset']	= 'ISO-8859-1';
+	$config['wordwrap']	= TRUE;
+
+	$this->email->initialize($config);
+	$this->email->from('khamim@nurhuda.com','Subject');
+	$this->email->to('target@mail.com');
+	$this->email->subject('Subject');
+	$this->email->message("Isi Email");
+	$send = $this->email->send();
+
+}
+}

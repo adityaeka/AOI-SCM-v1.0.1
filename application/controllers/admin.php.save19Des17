@@ -1,0 +1,198 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+class Admin extends CI_Controller {
+	
+	function __construct()
+    {
+		parent::__construct();
+		date_default_timezone_set('Asia/Jakarta');
+		$CI = &get_instance();
+  		$this->db2 = $CI->load->database('db2',TRUE);
+    }
+   	public function index(){
+		$data['title_page'] = "APPAREL ONE INDONESIA";
+		$data['desc_page']	= "DASHBOARD SYSTEM";
+		$data['content']	= "index";
+		$this->load->view('layout',$data);
+    }
+    //REPORT FABRIC
+    public function report_imported_pl_fb(){
+    	$data['title_page'] = "APPAREL ONE INDONESIA";
+		$data['desc_page']	= "REPORT IMPORTED PACKING LIST FABRIC";
+		$data['content']	= "report/report_imported_pl_fb";
+		$this->load->view('layout',$data);
+    }
+    public function report_plfbr()
+	{	
+		$data['title_page'] = "REPORT";
+		$data['desc_page']	= "DETAIL PACKING LIST";
+		$data['content']	= "report/index_fbr";
+        //$data['type_po']    = $type_po;
+		$this->load->view('layout',$data);
+	}
+	function xls_pilih_fbr(){
+        $this->load->view('admin/report/xls_acc_pilih_fbr');
+    }
+
+	//REPORT ACCESSORIES
+    public function report_placc()
+	{	
+		$data['title_page'] = "REPORT";
+		$data['desc_page']	= "DETAIL PACKING LIST";
+		$data['content']	= "report/index";
+        //$data['type_po']    = $type_po;
+		$this->load->view('layout',$data);
+	}
+    
+    function xls_pilih(){
+        $this->load->view('admin/report/xls_acc_pilih');
+    }
+
+    public function report_imported_pl_acc(){
+    	$data['title_page'] = "APPAREL ONE INDONESIA";
+		$data['desc_page']	= "REPORT IMPORTED PACKING LIST ACC";
+		$data['content']	= "report/report_imported_pl_acc";
+		
+		$this->load->view('layout',$data);
+    }
+    public function download_report(){
+    	//$data['title_page'] = "APPAREL ONE INDONESIA";
+    	//$data['desc_page']  = "DOWNLOAD REPORT";
+    	//$data['content']    = "report/xls_acc";
+    	$this->load->view('admin/report/xls_acc');
+    }
+    //REPORT CONFIRMED DATE BY ADIT
+    public function report_confirmed_date(){
+        $data['title_page'] = "APPAREL ONE INDONESIA";
+        $data['desc_page']  = "REPORT CONFIRMED DATE";
+        $data['content']    = "report/report_confirmed_date";
+        
+        $this->load->view('layout',$data);
+    }
+    function xls_pilih_confirm_date(){
+        $this->load->view('admin/report/xls_pilih_confirm_date');
+    }
+    function po(){
+        $data['title_page'] = "Purchase Order";
+        $data['desc_page']  = "Supplier List";
+        $data['content']    = "po/index";
+        $this->load->view('layout',$data);   
+    }
+    function po_detail(){
+        $this->load->view('admin/po/detail');
+    }
+    function po_upload(){
+        $this->load->view('admin/po/upload');
+    }
+    function po_add_upload(){
+        $this->load->view('admin/po/upload_add_file');
+    }
+    function po_download(){
+        $file = $this->db->where('id',$_GET['id'])->get('m_po_file')->result()[0]->file_name;
+        header('location:'.base_url('file/po/'.$file));
+    }
+    function file_download(){
+        $file = $this->db->where('id',$_GET['id'])->get('m_po_file_additional')->result()[0]->file_name;
+        header('location:'.base_url('file/additional/'.$file));
+    }
+    function po_upload_revision(){
+        $this->load->view('admin/po/upload_revision');
+    }
+    function file_upload_revision(){
+        $this->load->view('admin/po/file_revision');
+    }
+    function po_upload_submit(){
+        $data = $_GET;
+        $data['file_name']  = substr(md5(date('Y-m-d H:i:s').$data['c_order_id']),0,10).'-'.$_FILES['po']['name'];
+        $data['user_id']    = $this->session->userdata('user_id');
+        $upl = move_uploaded_file($_FILES['po']['tmp_name'], $_SERVER['DOCUMENT_ROOT'].'/file/po/'.$data['file_name']);
+        if($upl){
+            $a = $this->db->insert('m_po_file',$data);
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    function po_upload_file_submit(){
+        //get supplier id
+        $sup = $this->db2->where('c_order_id',$_GET['c_order_id'])->get('f_web_po_header')->result()[0]->c_bpartner_id;
+        $name = str_replace(array('#'),'_',$_FILES['po']['name']);
+        $data = $_GET;
+        $data['c_bpartner_id'] = $sup;
+        $data['file_name']  = substr(md5(date('Y-m-d H:i:s').$data['c_order_id']),0,10).'-'.$name;
+        $data['user_id']    = $this->session->userdata('user_id');
+        $upl = move_uploaded_file($_FILES['po']['tmp_name'], $_SERVER['DOCUMENT_ROOT'].'/file/additional/'.$data['file_name']);
+        if($upl){
+            $a = $this->db->insert('m_po_file_additional',$data);
+            echo 1;
+        }else{
+            echo 0;
+        }
+    }
+    function file_add_delete(){
+        $this->db->where('id',$_GET['id'])->update('m_po_file_additional',array('status'=>'f'));
+        echo 1;
+    }
+    function date_promised(){
+        if($_POST['status'] == 'lock')
+            $s = 't';
+        else
+            $s = 'f';
+        $this->db->where('c_orderline_id',$_POST['c_orderline_id'])->update('m_date_promised',array('lock'=>$s,'confirm_date' => date('Y-m-d H:i:s')));    
+    }
+
+    function all_packing_list(){
+        $data['title_page'] = "Purchase Order";
+        $data['desc_page']  = "Detail Packing List";
+        $data['content']    = "packinglist/detail_pl";
+        $this->load->view('layout',$data);   
+    }
+
+    function all_packing_list_new(){
+        $data['title_page'] = "Purchase Order";
+        $data['desc_page']  = "Detail Packing List New";
+        $data['content']    = "packinglist/detail_pl_new";
+        $this->load->view('layout',$data);   
+    }
+    function show_po(){
+        $cek  = $this->db->where($_POST)->get('show_po_status')->num_rows();
+        $data = $_POST;
+        if($cek == 0){
+            $h = $this->db2->where('c_order_id',$data['c_order_id'])->get('f_web_po_header')->result()[0];
+            $data['c_bpartner_id'] = $h->c_bpartner_id;
+            $this->db->insert('show_po_status',$data);
+        }else{
+            $update  = $this->db->where($_POST)->update('show_po_status',array('status'=>'t'));
+        }
+            echo 1;
+    }
+    function hide_po(){
+        $update  = $this->db->where($_POST)->update('show_po_status',array('status'=>'f'));
+        echo 1;
+    }
+
+    function download_datepromised_detail(){
+        $this->load->view('admin/report/download_excel_datepromised');
+    }
+    function orderform_thread(){
+        $this->load->view('document/orderform_thread');
+    }
+    function orderform_zipper(){
+        $this->load->view('document/orderform_zipper');
+    }
+
+    function test(){
+        $a = $this->db->get('m_date_promised');
+        foreach($a->result() as $b){
+            $c = $this->db2->where('c_orderline_id',$b->c_orderline_id)->get('f_web_po_detail');
+            if($c->num_rows() > 0){
+                $d = $c->result()[0]->c_bpartner_id;
+                echo $b->c_orderline_id.' '.$d.'<br>';
+                $this->db->where('c_orderline_id',$b->c_orderline_id)->update('m_date_promised',array('c_bpartner_id'=>$d));
+            }
+        }
+    }
+    function iot(){
+    	echo 1;
+    }
+} 
